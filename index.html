@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Student Register</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        input { padding: 8px; margin: 5px 0; width: 100%; max-width: 300px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>School Student Register</h2>
+    
+    <div>
+        <h3>Add Student</h3>
+        <input type="text" id="name" placeholder="Student Name" required>
+        <input type="text" id="fatherName" placeholder="Father's Name" required>
+        <input type="text" id="motherName" placeholder="Mother's Name" required>
+        <input type="text" id="dob" placeholder="Date of Birth (DD/MM/YYYY)" pattern="\d{2}/\d{2}/\d{4}" required>
+        <button onclick="submitData()">Add Student</button>
+    </div>
+
+    <div>
+        <h3>Student Records</h3>
+        <button onclick="fetchData()">Display All Records</button>
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Father's Name</th>
+                    <th>Mother's Name</th>
+                    <th>Date of Birth</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const SHEET_ID = '1S1STW5DYlMQSH6BUhJAPSf0MQG2od4FYoli_NSLRV3Q'; // Replace with your Spreadsheet ID
+        const API_KEY = '658334f0bd089d66e6da1102977aee25dbfa37a6'; // Replace with your API Key
+        const BASE_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
+
+        // Add student data
+        async function submitData() {
+            const name = document.getElementById('name').value;
+            const fatherName = document.getElementById('fatherName').value;
+            const motherName = document.getElementById('motherName').value;
+            const dob = document.getElementById('dob').value;
+
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+                alert('Please enter Date of Birth in DD/MM/YYYY format');
+                return;
+            }
+
+            const data = { values: [[name, fatherName, motherName, dob]] };
+            
+            try {
+                const response = await fetch(`${BASE_URL}/values/A1:append?valueInputOption=RAW&key=${API_KEY}`, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    alert('Student added successfully!');
+                    clearForm();
+                    fetchData();
+                } else {
+                    alert('Error adding student: ' + response.statusText);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Fetch and display all records
+        async function fetchData() {
+            try {
+                const response = await fetch(`${BASE_URL}/values/A:D?key=${API_KEY}`);
+                const data = await response.json();
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                if (data.values) {
+                    data.values.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row[0] || ''}</td>
+                            <td>${row[1] || ''}</td>
+                            <td>${row[2] || ''}</td>
+                            <td>${row[3] || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                alert('Error fetching data: ' + error.message);
+            }
+        }
+
+        // Clear form
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('fatherName').value = '';
+            document.getElementById('motherName').value = '';
+            document.getElementById('dob').value = '';
+        }
+    </script>
+</body>
+</html>
